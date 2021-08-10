@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
-import { jsx } from '@emotion/react'
-import facepaint from 'facepaint'
+import { jsx } from "@emotion/react";
+import facepaint from "facepaint";
 import React, {
   PropsWithChildren,
   useState,
@@ -11,15 +11,14 @@ import React, {
   useCallback,
 } from "react";
 import { useInView } from "react-intersection-observer";
-import useSWR from "swr";
+import useSWR, { useSWRInfinite } from "swr";
 import useResizeObserver from "use-resize-observer";
 
 const mediaQueries = facepaint([
-  '@media(min-width: 768px)',
-  '@media(min-width: 1024px)',
-  '@media(min-width: 1280px)',
-])
-
+  "@media(min-width: 768px)",
+  "@media(min-width: 1024px)",
+  "@media(min-width: 1280px)",
+]);
 
 type Item = {
   download_url: string;
@@ -81,23 +80,28 @@ function Storefront({ initialItems }: InitialProps) {
 function Carousel({ initialItems }: { initialItems: InitialItems }) {
   const [page, setPage] = useState(1);
   const visiblesRef = useRef(new Set<string>());
-  const { data, error } = useSWR<Item[]>(
-    `https://picsum.photos/v2/list?page=${page}`,
-    itemsFetcher,
-    { initialData: initialItems }
+  const { data, error, mutate, size, setSize, isValidating } = useSWRInfinite<
+    Item[]
+  >(
+    (idx) => `https://picsum.photos/v2/list?page=${idx + 1}`,
+    itemsFetcher
   );
-  const [storedItems, setStoredItems] = useState<Item[]>(initialItems);
+
   const [offset, setOffset] = useState(0);
 
-  const visibleItems = useMemo(() => {
-    return data?.slice(offset);
-  }, [data, offset]);
+  const paddedItems = useMemo<Item[]>(() => {
+    return Array(20)
+      .fill(true)
+      .map((item, idx) => ({
+        id: `padding-${idx}`,
+        download_url: "",
+      }));
+  }, []);
 
-  useEffect(() => {
-    setInterval(() => {
-      console.log(`Visible Items: ${visiblesRef.current.size}`)
-    }, 1000)
-  }, [])
+  const visibleItems = useMemo(() => {
+    const k = data?.length ? data.flat() : initialItems
+    return k?.slice(offset).concat(paddedItems);
+  }, [data, initialItems, offset, paddedItems]);
 
   const previous = () => {
     const visibleCount = visiblesRef.current.size;
@@ -107,13 +111,15 @@ function Carousel({ initialItems }: { initialItems: InitialItems }) {
 
   const next = () => {
     const visibleCount = visiblesRef.current.size;
+    setPage(page + 1);
     setOffset(offset + visibleCount);
+    setSize(size => size + 1)
   };
 
   return (
     <div>
       <p>
-        Currently Visible: {offset} - {offset + visiblesRef.current.size}
+        Currently Visible: {offset} - {offset + (visiblesRef.current.size - 1)}
       </p>
       <div>
         <button onClick={previous}>Previous</button>
@@ -143,7 +149,9 @@ function Item({
   item: Item;
   visiblesRef: MutableRefObject<Set<string>>;
 }) {
-  const { ref, inView } = useInView();
+  const { ref, inView } = useInView({
+    threshold: 0.1,
+  });
 
   useEffect(() => {
     if (inView) {
@@ -158,9 +166,10 @@ function Item({
   return (
     <li
       ref={ref}
+      className={inView ? "visible" : ""}
       css={mediaQueries({
         display: "inline-block",
-        width: ['50%', '25%', '20%', '12.5%'],
+        width: ["50%", "25%", "20%", "12.5%"],
       })}
     >
       {/* eslint-disable-next-line  @next/next/no-img-element, jsx-a11y/alt-text */}
@@ -174,6 +183,8 @@ function Item({
   );
 }
 
-const itemsFetcher = (url: string) => fetch(url).then((res) => res.json());
+const itemsFetcher = (url: string) => {
+  return fetch(url).then((res) => res.json());
+};
 
 export default Storefront;
