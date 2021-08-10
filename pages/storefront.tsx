@@ -9,10 +9,10 @@ import React, {
   useMemo,
   MutableRefObject,
   useCallback,
+  Ref,
 } from "react";
 import { useInView } from "react-intersection-observer";
-import useSWR, { useSWRInfinite } from "swr";
-import useResizeObserver from "use-resize-observer";
+import { useSWRInfinite } from "swr";
 
 const mediaQueries = facepaint([
   "@media(min-width: 768px)",
@@ -82,10 +82,7 @@ function Carousel({ initialItems }: { initialItems: InitialItems }) {
   const visiblesRef = useRef(new Set<string>());
   const { data, error, mutate, size, setSize, isValidating } = useSWRInfinite<
     Item[]
-  >(
-    (idx) => `https://picsum.photos/v2/list?page=${idx + 1}`,
-    itemsFetcher
-  );
+  >((idx) => `https://picsum.photos/v2/list?page=${idx + 1}`, itemsFetcher);
 
   const [offset, setOffset] = useState(0);
 
@@ -99,7 +96,7 @@ function Carousel({ initialItems }: { initialItems: InitialItems }) {
   }, []);
 
   const visibleItems = useMemo(() => {
-    const k = data?.length ? data.flat() : initialItems
+    const k = data?.length ? data.flat() : initialItems;
     return k?.slice(offset).concat(paddedItems);
   }, [data, initialItems, offset, paddedItems]);
 
@@ -113,7 +110,7 @@ function Carousel({ initialItems }: { initialItems: InitialItems }) {
     const visibleCount = visiblesRef.current.size;
     setPage(page + 1);
     setOffset(offset + visibleCount);
-    setSize(size => size + 1)
+    // setSize(size => size + 1)
   };
 
   return (
@@ -122,8 +119,18 @@ function Carousel({ initialItems }: { initialItems: InitialItems }) {
         Currently Visible: {offset} - {offset + (visiblesRef.current.size - 1)}
       </p>
       <div>
-        <button onClick={previous}>Previous</button>
-        <button onClick={next}>Next</button>
+        <button onClick={previous} disabled={offset === 0}>
+          Previous
+        </button>
+        <button
+          onClick={next}
+          disabled={
+            visiblesRef.current.size >
+            visibleItems.length - paddedItems.length
+          }
+        >
+          Next
+        </button>
       </div>
       <ul
         css={{
@@ -149,7 +156,7 @@ function Item({
   item: Item;
   visiblesRef: MutableRefObject<Set<string>>;
 }) {
-  const { ref, inView } = useInView({
+  const { ref: inViewRef, inView } = useInView({
     threshold: 0.1,
   });
 
@@ -165,7 +172,7 @@ function Item({
 
   return (
     <li
-      ref={ref}
+      ref={useCombinedRefs(inViewRef)}
       className={inView ? "visible" : ""}
       css={mediaQueries({
         display: "inline-block",
@@ -186,5 +193,27 @@ function Item({
 const itemsFetcher = (url: string) => {
   return fetch(url).then((res) => res.json());
 };
+
+export const useCombinedRefs = <T extends any>(
+  ...refs: Array<Ref<T>>
+): Ref<T> =>
+  useCallback(
+    (element: T) =>
+      refs.forEach((ref) => {
+        if (!ref) {
+          return;
+        }
+
+        // Ref can have two types - a function or an object. We treat each case.
+        if (typeof ref === "function") {
+          return ref(element);
+        }
+
+        // As per https://github.com/facebook/react/issues/13029
+        // it should be fine to set current this way.
+        (ref as any).current = element;
+      }),
+    refs
+  );
 
 export default Storefront;
