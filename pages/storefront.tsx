@@ -72,17 +72,21 @@ function Storefront({ initialItems }: InitialProps) {
         }}
       >
         <Carousel initialItems={initialItems}></Carousel>
+        <p></p>
+        <Carousel initialItems={initialItems}></Carousel>
       </div>
     </>
   );
 }
 
 function Carousel({ initialItems }: { initialItems: InitialItems }) {
-  const [page, setPage] = useState(1);
   const visiblesRef = useRef(new Set<string>());
   const { data, error, mutate, size, setSize, isValidating } = useSWRInfinite<
     Item[]
-  >((idx) => `https://picsum.photos/v2/list?page=${idx + 1}`, itemsFetcher);
+  >(
+    (pageIndex) => `https://picsum.photos/v2/list?page=${pageIndex + 1}`,
+    itemsFetcher
+  );
 
   const [offset, setOffset] = useState(0);
 
@@ -96,9 +100,24 @@ function Carousel({ initialItems }: { initialItems: InitialItems }) {
   }, []);
 
   const visibleItems = useMemo(() => {
-    const k = data?.length ? data.flat() : initialItems;
+    const k = data?.length
+      ? data.flat().map((i) => ({
+          ...i,
+          download_url: `https://picsum.photos/id/${i.id}/200.jpg`,
+        }))
+      : initialItems;
     return k?.slice(offset).concat(paddedItems);
   }, [data, initialItems, offset, paddedItems]);
+
+  useEffect(() => {
+    const highestShown = offset + visiblesRef.current.size - 1;
+    if (!data) return;
+
+    // if we only have 10 more to go, let's fetch the next batch of 30
+    if (data.flat().length - highestShown < 10) {
+      setSize((size) => size + 1);
+    }
+  }, [offset, data, setSize]);
 
   const previous = () => {
     const visibleCount = visiblesRef.current.size;
@@ -108,9 +127,7 @@ function Carousel({ initialItems }: { initialItems: InitialItems }) {
 
   const next = () => {
     const visibleCount = visiblesRef.current.size;
-    setPage(page + 1);
     setOffset(offset + visibleCount);
-    // setSize(size => size + 1)
   };
 
   return (
@@ -125,8 +142,7 @@ function Carousel({ initialItems }: { initialItems: InitialItems }) {
         <button
           onClick={next}
           disabled={
-            visiblesRef.current.size >
-            visibleItems.length - paddedItems.length
+            visiblesRef.current.size > visibleItems.length - paddedItems.length
           }
         >
           Next
@@ -172,7 +188,7 @@ function Item({
 
   return (
     <li
-      ref={useCombinedRefs(inViewRef)}
+      ref={inViewRef}
       className={inView ? "visible" : ""}
       css={mediaQueries({
         display: "inline-block",
@@ -193,27 +209,5 @@ function Item({
 const itemsFetcher = (url: string) => {
   return fetch(url).then((res) => res.json());
 };
-
-export const useCombinedRefs = <T extends any>(
-  ...refs: Array<Ref<T>>
-): Ref<T> =>
-  useCallback(
-    (element: T) =>
-      refs.forEach((ref) => {
-        if (!ref) {
-          return;
-        }
-
-        // Ref can have two types - a function or an object. We treat each case.
-        if (typeof ref === "function") {
-          return ref(element);
-        }
-
-        // As per https://github.com/facebook/react/issues/13029
-        // it should be fine to set current this way.
-        (ref as any).current = element;
-      }),
-    refs
-  );
 
 export default Storefront;

@@ -19,6 +19,7 @@
     "use-resize-observer": "^7.0.1"
   },
   "devDependencies": {
+    "@types/facepaint": "^1.2.2",
     "@types/react": "17.0.16",
     "eslint": "7.32.0",
     "eslint-config-next": "11.0.1",
