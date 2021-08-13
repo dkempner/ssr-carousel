@@ -12,7 +12,8 @@ import React, {
   Ref,
 } from "react";
 import { useInView } from "react-intersection-observer";
-import { useSWRInfinite } from "swr";
+import useSWR from "swr";
+import ITEM_IDS from "../components/ITEM_IDS";
 
 const mediaQueries = facepaint([
   "@media(min-width: 768px)",
@@ -21,26 +22,18 @@ const mediaQueries = facepaint([
 ]);
 
 type Item = {
-  download_url: string;
   id: string;
 };
 type InitialItems = Item[];
-type InitialProps = {
-  initialItems: InitialItems;
-};
+type InitialProps = {};
 
 export const getServerSideProps = async () => {
-  const initialItems: InitialItems = await itemsFetcher(
-    "https://picsum.photos/v2/list?page=1"
-  );
   return {
-    props: {
-      initialItems,
-    },
+    props: {},
   };
 };
 
-function Storefront({ initialItems }: InitialProps) {
+function Storefront({}: InitialProps) {
   return (
     <>
       <header
@@ -71,80 +64,39 @@ function Storefront({ initialItems }: InitialProps) {
           borderLeft: "1px solid black",
         }}
       >
-        <Carousel initialItems={initialItems}></Carousel>
+        <Carousel itemIds={ITEM_IDS}></Carousel>
         <p></p>
-        <Carousel initialItems={initialItems}></Carousel>
+        <Carousel itemIds={ITEM_IDS}></Carousel>
       </div>
     </>
   );
 }
 
-function Carousel({ initialItems }: { initialItems: InitialItems }) {
-  const visiblesRef = useRef(new Set<string>());
-  const { data, error, mutate, size, setSize, isValidating } = useSWRInfinite<
-    Item[]
-  >(
-    (pageIndex) => `https://picsum.photos/v2/list?page=${pageIndex + 1}`,
-    itemsFetcher
-  );
-
-  const [offset, setOffset] = useState(0);
-
-  const paddedItems = useMemo<Item[]>(() => {
-    return Array(20)
-      .fill(true)
-      .map((item, idx) => ({
-        id: `padding-${idx}`,
-        download_url: "",
-      }));
-  }, []);
-
-  const visibleItems = useMemo(() => {
-    const k = data?.length
-      ? data.flat().map((i) => ({
-          ...i,
-          download_url: `https://picsum.photos/id/${i.id}/200.jpg`,
-        }))
-      : initialItems;
-    return k?.slice(offset).concat(paddedItems);
-  }, [data, initialItems, offset, paddedItems]);
-
-  useEffect(() => {
-    const highestShown = offset + visiblesRef.current.size - 1;
-    if (!data) return;
-
-    // if we only have 10 more to go, let's fetch the next batch of 30
-    if (data.flat().length - highestShown < 10) {
-      setSize((size) => size + 1);
-    }
-  }, [offset, data, setSize]);
-
-  const previous = () => {
-    const visibleCount = visiblesRef.current.size;
-    const desired = offset - visibleCount;
-    setOffset(desired >= 0 ? desired : 0);
-  };
-
-  const next = () => {
-    const visibleCount = visiblesRef.current.size;
-    setOffset(offset + visibleCount);
-  };
+function Carousel({ itemIds }: { itemIds: string[] }) {
+  const {
+    visibleElements,
+    visibilityList,
+    offset,
+    showPrevious,
+    showNext,
+    previousDisabled,
+    nextDisabled,
+  } = useWidthDetectingCarousel({
+    items: itemIds.map((id) => ({ id })),
+    serverRenderedMax: 20,
+  });
 
   return (
     <div>
       <p>
-        Currently Visible: {offset} - {offset + (visiblesRef.current.size - 1)}
+        Currently Visible: {offset} -{" "}
+        {offset + (visibilityList.current.size - 1)}
       </p>
       <div>
-        <button onClick={previous} disabled={offset === 0}>
+        <button onClick={showPrevious} disabled={previousDisabled}>
           Previous
         </button>
-        <button
-          onClick={next}
-          disabled={
-            visiblesRef.current.size > visibleItems.length - paddedItems.length
-          }
-        >
+        <button onClick={showNext} disabled={nextDisabled}>
           Next
         </button>
       </div>
@@ -157,34 +109,43 @@ function Carousel({ initialItems }: { initialItems: InitialItems }) {
           padding: 0,
         }}
       >
-        {visibleItems?.map((item) => (
-          <Item key={item.id} item={item} visiblesRef={visiblesRef} />
+        {visibleElements?.map((item) => (
+          <Item key={item.id} item={item} visibilityList={visibilityList} />
         ))}
       </ul>
     </div>
   );
 }
 
+const fetchById = (id: string) => {
+  const url = `https://picsum.photos/id/${id}/info`;
+  return fetch(url).then((res) => res.json());
+};
+
 function Item({
   item,
-  visiblesRef,
+  visibilityList,
 }: {
   item: Item;
-  visiblesRef: MutableRefObject<Set<string>>;
+  visibilityList: MutableRefObject<Set<string>>;
 }) {
+  const { data, error } = useSWR<Item>(item.id, fetchById, {});
+  const id = data?.id;
+  const downloadUrl = `https://picsum.photos/id/${id}/200`;
+
   const { ref: inViewRef, inView } = useInView({
     threshold: 0.1,
   });
 
   useEffect(() => {
     if (inView) {
-      visiblesRef.current.add(item.id);
+      visibilityList.current.add(item.id);
     }
 
     return () => {
-      visiblesRef.current.delete(item.id);
+      visibilityList.current.delete(item.id);
     };
-  }, [inView, item.id, visiblesRef]);
+  }, [inView, item.id, visibilityList]);
 
   return (
     <li
@@ -198,10 +159,10 @@ function Item({
       {/* eslint-disable-next-line  @next/next/no-img-element, jsx-a11y/alt-text */}
       <img
         css={{ width: "100%", height: 100 }}
-        src={item.download_url}
+        src={downloadUrl}
         loading="lazy"
       />
-      <p>{item.id}</p>
+      <p>{id}</p>
     </li>
   );
 }
@@ -209,5 +170,64 @@ function Item({
 const itemsFetcher = (url: string) => {
   return fetch(url).then((res) => res.json());
 };
+
+type UseWidthDetectingCarouselProps = {
+  items: Item[];
+  serverRenderedMax: number;
+};
+
+function useWidthDetectingCarousel({
+  items,
+  serverRenderedMax,
+}: UseWidthDetectingCarouselProps) {
+  const visibilityList = useRef(new Set<string>());
+  const [offset, setOffset] = useState(0);
+
+  const paddedItems = useMemo<Item[]>(() => {
+    return Array(20)
+      .fill(true)
+      .map((item, idx) => {
+        return {
+          id: `padding-${idx}`,
+        };
+      });
+  }, []);
+
+  const visibleElements = useMemo(() => {
+    const withPadding = items.concat(paddedItems);
+    return withPadding.slice(offset, offset + serverRenderedMax);
+  }, [items, offset, paddedItems, serverRenderedMax]);
+
+  const showPrevious = useCallback(() => {
+    const visibleCount = visibilityList.current.size;
+    const desired = offset - visibleCount;
+    setOffset(desired >= 0 ? desired : 0);
+  }, [offset]);
+
+  const showNext = useCallback(() => {
+    const visibleCount = visibilityList.current.size;
+    setOffset(offset + visibleCount);
+  }, [offset]);
+
+  const previousDisabled = useMemo(() => {
+    return offset === 0;
+  }, [offset]);
+
+  const nextDisabled = useMemo(() => {
+    return (
+      visibilityList.current.size > visibleElements.length - paddedItems.length
+    );
+  }, [visibleElements.length, paddedItems.length]);
+
+  return {
+    visibleElements,
+    visibilityList,
+    offset,
+    showPrevious,
+    showNext,
+    previousDisabled,
+    nextDisabled,
+  };
+}
 
 export default Storefront;
