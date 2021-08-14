@@ -126,8 +126,11 @@ function Carousel({ jobs }: { jobs: JobsQueryJob[] }) {
     nextDisabled,
   } = useWidthDetectingCarousel({
     items: ids.map((id) => ({ id })),
-    serverRenderedMax: 20,
+    maxVisible: 10,
   });
+
+  console.log({ visibleElements });
+
   return (
     <div>
       <p>
@@ -219,12 +222,12 @@ function Job({
 
 type UseWidthDetectingCarouselProps = {
   items: Item[];
-  serverRenderedMax: number;
+  maxVisible: number;
 };
 
 function useWidthDetectingCarousel({
   items,
-  serverRenderedMax,
+  maxVisible,
 }: UseWidthDetectingCarouselProps) {
   const visibilityList = useRef(new Set<string>());
   const [offset, setOffset] = useState(0);
@@ -232,7 +235,7 @@ function useWidthDetectingCarousel({
   const paddedItems = useMemo<Item[]>(() => {
     return Array(20)
       .fill(true)
-      .map((item, idx) => {
+      .map((_item, idx) => {
         return {
           id: `padding-${idx}`,
         };
@@ -241,8 +244,8 @@ function useWidthDetectingCarousel({
 
   const visibleElements = useMemo(() => {
     const withPadding = items.concat(paddedItems);
-    return withPadding.slice(offset, offset + serverRenderedMax);
-  }, [items, offset, paddedItems, serverRenderedMax]);
+    return withPadding.slice(offset, offset + maxVisible);
+  }, [items, offset, paddedItems, maxVisible]);
 
   const showPrevious = useCallback(() => {
     const visibleCount = visibilityList.current.size;
@@ -261,7 +264,7 @@ function useWidthDetectingCarousel({
 
   const nextDisabled = useMemo(() => {
     return offset + visibilityList.current.size > items.length - 1;
-  }, [visibleElements, paddedItems]);
+  }, [offset, items]);
 
   return {
     visibleElements,
