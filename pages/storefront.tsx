@@ -1,5 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { jsx } from "@emotion/react";
+import { useQuery, gql } from "@apollo/client";
 import facepaint from "facepaint";
 import React, {
   PropsWithChildren,
@@ -12,8 +13,6 @@ import React, {
   Ref,
 } from "react";
 import { useInView } from "react-intersection-observer";
-import useSWR from "swr";
-import ITEM_IDS from "../components/ITEM_IDS";
 
 const mediaQueries = facepaint([
   "@media(min-width: 768px)",
@@ -24,16 +23,50 @@ const mediaQueries = facepaint([
 type Item = {
   id: string;
 };
-type InitialItems = Item[];
-type InitialProps = {};
 
-export const getServerSideProps = async () => {
-  return {
-    props: {},
+type JobsQueryJob = {
+  id: string;
+  company: {
+    slug: string;
   };
+  slug: string;
 };
 
-function Storefront({}: InitialProps) {
+type JobsQueryJobsResult = {
+  jobs: JobsQueryJob[];
+};
+
+export const JOBS_QUERY = gql`
+  query Jobs {
+    jobs {
+      id
+      company {
+        slug
+      }
+      slug
+    }
+  }
+`;
+
+type JobQueryJob = {
+  id: string;
+};
+
+type JobQueryJobResult = {
+  job: JobQueryJob
+}
+
+export const JOB_QUERY = gql`
+  query Job($input: JobInput!) {
+    job(input: $input) {
+      id
+    }
+  }
+`;
+
+function Storefront() {
+  const firstCarousel = useQuery<JobsQueryJobsResult>(JOBS_QUERY);
+
   return (
     <>
       <header
@@ -64,15 +97,27 @@ function Storefront({}: InitialProps) {
           borderLeft: "1px solid black",
         }}
       >
-        <Carousel itemIds={ITEM_IDS}></Carousel>
-        <p></p>
-        <Carousel itemIds={ITEM_IDS}></Carousel>
+        {firstCarousel.loading ? (
+          <></>
+        ) : (
+          <Carousel jobs={firstCarousel.data?.jobs || []}></Carousel>
+        )}
       </div>
     </>
   );
 }
 
-function Carousel({ itemIds }: { itemIds: string[] }) {
+function Carousel({ jobs }: { jobs: JobsQueryJob[] }) {
+  const ids = jobs.map((j) => j.id);
+
+  const jobById = useMemo(() => {
+    const hash: Record<string, JobsQueryJob> = {};
+    jobs.forEach((j) => {
+      hash[j.id] = j;
+    });
+    return hash;
+  }, [jobs]);
+
   const {
     visibleElements,
     visibilityList,
@@ -82,10 +127,9 @@ function Carousel({ itemIds }: { itemIds: string[] }) {
     previousDisabled,
     nextDisabled,
   } = useWidthDetectingCarousel({
-    items: itemIds.map((id) => ({ id })),
+    items: ids.map((id) => ({ id })),
     serverRenderedMax: 20,
   });
-
   return (
     <div>
       <p>
@@ -110,28 +154,33 @@ function Carousel({ itemIds }: { itemIds: string[] }) {
         }}
       >
         {visibleElements?.map((item) => (
-          <Item key={item.id} item={item} visibilityList={visibilityList} />
+          <Job
+            key={item.id}
+            job={jobById[item.id]}
+            visibilityList={visibilityList}
+          />
         ))}
       </ul>
     </div>
   );
 }
 
-const fetchById = (id: string) => {
-  const url = `https://picsum.photos/id/${id}/info`;
-  return fetch(url).then((res) => res.json());
-};
-
-function Item({
-  item,
+function Job({
+  job,
   visibilityList,
 }: {
-  item: Item;
+  job: JobsQueryJob;
   visibilityList: MutableRefObject<Set<string>>;
 }) {
-  const { data, error } = useSWR<Item>(item.id, fetchById, {});
-  const id = data?.id;
-  const downloadUrl = `https://picsum.photos/id/${id}/200`;
+  const { data, error } = useQuery<JobQueryJobResult>(JOB_QUERY, {
+    variables: {
+      input: {
+        companySlug: job.company.slug,
+        jobSlug: job.slug,
+      },
+    },
+  });
+
 
   const { ref: inViewRef, inView } = useInView({
     threshold: 0.1,
@@ -139,13 +188,13 @@ function Item({
 
   useEffect(() => {
     if (inView) {
-      visibilityList.current.add(item.id);
+      visibilityList.current.add(job.id);
     }
 
     return () => {
-      visibilityList.current.delete(item.id);
+      visibilityList.current.delete(job.id);
     };
-  }, [inView, item.id, visibilityList]);
+  }, [inView, job.id, visibilityList]);
 
   return (
     <li
@@ -156,20 +205,14 @@ function Item({
         width: ["50%", "25%", "20%", "12.5%"],
       })}
     >
-      {/* eslint-disable-next-line  @next/next/no-img-element, jsx-a11y/alt-text */}
-      <img
-        css={{ width: "100%", height: 100 }}
-        src={downloadUrl}
-        loading="lazy"
-      />
-      <p>{id}</p>
+      <div>
+        <p>{data?.job.id}</p>
+        <p>{job.company.slug}</p>
+        <p>{job.slug}</p>
+      </div>
     </li>
   );
 }
-
-const itemsFetcher = (url: string) => {
-  return fetch(url).then((res) => res.json());
-};
 
 type UseWidthDetectingCarouselProps = {
   items: Item[];
