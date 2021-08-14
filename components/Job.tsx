@@ -2,7 +2,7 @@
 import { jsx } from "@emotion/react";
 import { useQuery, gql } from "@apollo/client";
 import facepaint from "facepaint";
-import { useEffect, MutableRefObject } from "react";
+import { useEffect, MutableRefObject, memo } from "react";
 import { useInView } from "react-intersection-observer";
 
 type JobQueryJob = {
@@ -75,7 +75,6 @@ export default function Job({
   return (
     <li
       ref={inViewRef}
-      className={inView ? "visible" : ""}
       css={mediaQueries({
         display: "inline-block",
         width: [itemWidth(2), itemWidth(4), itemWidth(5), itemWidth(8)],

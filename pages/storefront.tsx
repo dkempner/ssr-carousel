@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { jsx } from "@emotion/react";
 import { useQuery, gql } from "@apollo/client";
-import JobsCarousel from '../components/JobsCarousel'
+import JobsCarousel from "../components/JobsCarousel";
 
 type JobsQueryJob = {
   id: string;
@@ -26,7 +26,6 @@ export const JOBS_QUERY = gql`
     }
   }
 `;
-
 
 function Storefront() {
   const firstCarousel = useQuery<JobsQueryJobsResult>(JOBS_QUERY);
@@ -64,7 +63,17 @@ function Storefront() {
         {firstCarousel.loading ? (
           <></>
         ) : (
-          <JobsCarousel jobs={firstCarousel.data?.jobs || []}></JobsCarousel>
+          <>
+            {Array(20)
+              .fill(true)
+              .map((_, idx) => (
+                <JobsCarousel
+                  key={idx}
+                  number={idx}
+                  jobs={firstCarousel.data?.jobs || []}
+                ></JobsCarousel>
+              ))}
+          </>
         )}
       </div>
     </>

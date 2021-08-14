@@ -16,7 +16,14 @@ type Item = {
   id: string;
 };
 
-export default function JobsCarousel({ jobs }: { jobs: JobsQueryJob[] }) {
+export default function JobsCarousel({
+  jobs,
+  number,
+}: {
+  jobs: JobsQueryJob[];
+  number: number;
+}) {
+  console.log("render carousel " + number);
   const ids = jobs.map((j) => j.id);
 
   const jobById = useMemo(() => {
@@ -37,15 +44,13 @@ export default function JobsCarousel({ jobs }: { jobs: JobsQueryJob[] }) {
     nextDisabled,
   } = useWidthDetectingCarousel({
     items: ids.map((id) => ({ id })),
-    maxServerRender: 5,
+    maxServerRender: 6,
   });
-
-  console.log({ visibleElements });
 
   return (
     <div>
       <p>
-        Currently Visible: {offset} -{" "}
+        ({number}) Currently Visible: {offset} -{" "}
         {offset + (visibilityList.current.size - 1)}
       </p>
       <div>
@@ -73,6 +78,15 @@ export default function JobsCarousel({ jobs }: { jobs: JobsQueryJob[] }) {
             visibilityList={visibilityList}
           />
         ))}
+        {Array(20)
+          .fill(true)
+          .map((_, idx) => (
+            <Job
+              key={idx}
+              id={idx.toString()}
+              visibilityList={visibilityList}
+            />
+          ))}
       </ul>
     </div>
   );
@@ -88,15 +102,30 @@ function useWidthDetectingCarousel({
   maxServerRender,
 }: UseWidthDetectingCarouselProps) {
   const visibilityList = useRef(new Set<string>());
+  const maxSlots = useRef(maxServerRender);
   const [offset, setOffset] = useState(0);
-  const [trigger, setTrigger] = useState(Math.random());
-  const forceUpdate = useMemo(
-    () =>
-      debounce(() => {
-        setTrigger(Math.random());
-      }, 100),
-    [setTrigger]
+  const [_, setTrigger] = useState(Math.random());
+
+  const forceUpdate = useMemo(() => {
+    return debounce(() => {
+      // @ts-ignore
+      setTrigger(Math.random());
+    }, 100);
+  }, [setTrigger]);
+
+  const originalAdd = visibilityList.current.add.bind(visibilityList.current);
+  visibilityList.current.add = (x: string) => {
+    forceUpdate();
+    return originalAdd(x);
+  };
+
+  const originalDelete = visibilityList.current.delete.bind(
+    visibilityList.current
   );
+  visibilityList.current.delete = (x: string) => {
+    forceUpdate();
+    return originalDelete(x);
+  };
 
   const paddedItems = useMemo<Item[]>(() => {
     return Array(20)
@@ -109,30 +138,42 @@ function useWidthDetectingCarousel({
   }, []);
 
   const visibleElements = useMemo(() => {
+    if (visibilityList.current.size > maxSlots.current) {
+      maxSlots.current = visibilityList.current.size;
+    }
     return (
       items
         // if we're on the client side, prefer the current slots we can see.
         // if we're on the server side, the maximum we're going to render is defined outside.
         .slice(
           offset,
-          offset + (visibilityList.current.size || maxServerRender)
+          offset + Math.max(visibilityList.current.size, maxSlots.current)
         )
-        .concat(paddedItems)
+      // .concat(paddedItems)
     );
-  }, [items, offset, paddedItems, maxServerRender, trigger]);
+  }, [items, offset, maxSlots]);
 
   // recompute once on hydrate
   useEffect(() => {
     forceUpdate();
   }, [forceUpdate]);
 
-  useEffect(() => {
-    window.addEventListener('resize', forceUpdate)
+  // // debounced recompute on resize
+  // useEffect(() => {
+  //   window.addEventListener("resize", forceUpdate);
+  //   return () => {
+  //     window.removeEventListener("resize", forceUpdate);
+  //   };
+  // }, [forceUpdate]);
 
-    return () => {
-      window.removeEventListener('resize', forceUpdate)
-    }
-  }, [forceUpdate])
+  // // debounced recompute on scroll in
+  // // case carousel is out of the viewport
+  // useEffect(() => {
+  //   window.addEventListener("scroll", forceUpdate);
+  //   return () => {
+  //     window.removeEventListener("scroll", forceUpdate);
+  //   };
+  // }, [forceUpdate]);
 
   const showPrevious = useCallback(() => {
     const visibleCount = visibilityList.current.size;
