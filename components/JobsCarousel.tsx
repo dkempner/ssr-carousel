@@ -1,7 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { jsx } from "@emotion/react";
-import { useEffect } from "react";
-import { useState, useRef, useMemo, useCallback } from "react";
+import { useState, useRef, useMemo, useCallback, useEffect } from "react";
+import { debounce } from "lodash";
 import Job from "./Job";
 
 type JobsQueryJob = {
@@ -41,16 +41,6 @@ export default function JobsCarousel({ jobs }: { jobs: JobsQueryJob[] }) {
   });
 
   console.log({ visibleElements });
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      console.log(visibilityList.current);
-    }, 500);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [visibilityList]);
 
   return (
     <div>
@@ -99,6 +89,14 @@ function useWidthDetectingCarousel({
 }: UseWidthDetectingCarouselProps) {
   const visibilityList = useRef(new Set<string>());
   const [offset, setOffset] = useState(0);
+  const [trigger, setTrigger] = useState(Math.random());
+  const forceUpdate = useMemo(
+    () =>
+      debounce(() => {
+        setTrigger(Math.random());
+      }, 100),
+    [setTrigger]
+  );
 
   const paddedItems = useMemo<Item[]>(() => {
     return Array(20)
@@ -111,12 +109,30 @@ function useWidthDetectingCarousel({
   }, []);
 
   const visibleElements = useMemo(() => {
-    return items
-      // if we're on the client side, prefer the current slots we can see.
-      // if we're on the server side, the maximum we're going to render is defined outside.
-      .slice(offset, offset + (visibilityList.current.size || maxServerRender))
-      .concat(paddedItems);
-  }, [items, offset, paddedItems, maxServerRender]);
+    return (
+      items
+        // if we're on the client side, prefer the current slots we can see.
+        // if we're on the server side, the maximum we're going to render is defined outside.
+        .slice(
+          offset,
+          offset + (visibilityList.current.size || maxServerRender)
+        )
+        .concat(paddedItems)
+    );
+  }, [items, offset, paddedItems, maxServerRender, trigger]);
+
+  // recompute once on hydrate
+  useEffect(() => {
+    forceUpdate();
+  }, [forceUpdate]);
+
+  useEffect(() => {
+    window.addEventListener('resize', forceUpdate)
+
+    return () => {
+      window.removeEventListener('resize', forceUpdate)
+    }
+  }, [forceUpdate])
 
   const showPrevious = useCallback(() => {
     const visibleCount = visibilityList.current.size;
