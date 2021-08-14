@@ -2,15 +2,13 @@
 import { jsx } from "@emotion/react";
 import { useQuery, gql } from "@apollo/client";
 import facepaint from "facepaint";
-import React, {
-  PropsWithChildren,
+import {
   useState,
   useEffect,
   useRef,
   useMemo,
   MutableRefObject,
   useCallback,
-  Ref,
 } from "react";
 import { useInView } from "react-intersection-observer";
 
@@ -53,8 +51,8 @@ type JobQueryJob = {
 };
 
 type JobQueryJobResult = {
-  job: JobQueryJob
-}
+  job: JobQueryJob;
+};
 
 export const JOB_QUERY = gql`
   query Job($input: JobInput!) {
@@ -169,32 +167,32 @@ function Job({
   job,
   visibilityList,
 }: {
-  job: JobsQueryJob;
+  job?: JobsQueryJob;
   visibilityList: MutableRefObject<Set<string>>;
 }) {
   const { data, error } = useQuery<JobQueryJobResult>(JOB_QUERY, {
     variables: {
       input: {
-        companySlug: job.company.slug,
-        jobSlug: job.slug,
+        companySlug: job?.company.slug,
+        jobSlug: job?.slug,
       },
     },
+    skip: !job,
   });
-
 
   const { ref: inViewRef, inView } = useInView({
     threshold: 0.1,
   });
 
   useEffect(() => {
-    if (inView) {
+    if (inView && job) {
       visibilityList.current.add(job.id);
     }
 
     return () => {
-      visibilityList.current.delete(job.id);
+      job && visibilityList.current.delete(job.id);
     };
-  }, [inView, job.id, visibilityList]);
+  }, [inView, job, visibilityList]);
 
   return (
     <li
@@ -205,10 +203,15 @@ function Job({
         width: ["50%", "25%", "20%", "12.5%"],
       })}
     >
-      <div>
+      <div
+        css={{
+          width: "75%",
+          overflow: "hidden",
+        }}
+      >
         <p>{data?.job.id}</p>
-        <p>{job.company.slug}</p>
-        <p>{job.slug}</p>
+        <p>{job?.company.slug}</p>
+        <p>{job?.slug}</p>
       </div>
     </li>
   );
@@ -257,10 +260,8 @@ function useWidthDetectingCarousel({
   }, [offset]);
 
   const nextDisabled = useMemo(() => {
-    return (
-      visibilityList.current.size > visibleElements.length - paddedItems.length
-    );
-  }, [visibleElements.length, paddedItems.length]);
+    return offset + visibilityList.current.size > items.length - 1;
+  }, [visibleElements, paddedItems]);
 
   return {
     visibleElements,
