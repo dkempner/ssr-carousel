@@ -1,11 +1,7 @@
 /** @jsxImportSource @emotion/react */
 import { jsx } from "@emotion/react";
-import {
-  useState,
-  useRef,
-  useMemo,
-  useCallback,
-} from "react";
+import { useEffect } from "react";
+import { useState, useRef, useMemo, useCallback } from "react";
 import Job from "./Job";
 
 type JobsQueryJob = {
@@ -19,7 +15,6 @@ type JobsQueryJob = {
 type Item = {
   id: string;
 };
-
 
 export default function JobsCarousel({ jobs }: { jobs: JobsQueryJob[] }) {
   const ids = jobs.map((j) => j.id);
@@ -42,10 +37,20 @@ export default function JobsCarousel({ jobs }: { jobs: JobsQueryJob[] }) {
     nextDisabled,
   } = useWidthDetectingCarousel({
     items: ids.map((id) => ({ id })),
-    maxVisible: 10,
+    maxServerRender: 5,
   });
 
   console.log({ visibleElements });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log(visibilityList.current);
+    }, 500);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [visibilityList]);
 
   return (
     <div>
@@ -73,6 +78,7 @@ export default function JobsCarousel({ jobs }: { jobs: JobsQueryJob[] }) {
         {visibleElements?.map((item) => (
           <Job
             key={item.id}
+            id={item.id}
             job={jobById[item.id]}
             visibilityList={visibilityList}
           />
@@ -84,12 +90,12 @@ export default function JobsCarousel({ jobs }: { jobs: JobsQueryJob[] }) {
 
 type UseWidthDetectingCarouselProps = {
   items: Item[];
-  maxVisible: number;
+  maxServerRender: number;
 };
 
 function useWidthDetectingCarousel({
   items,
-  maxVisible,
+  maxServerRender,
 }: UseWidthDetectingCarouselProps) {
   const visibilityList = useRef(new Set<string>());
   const [offset, setOffset] = useState(0);
@@ -105,9 +111,12 @@ function useWidthDetectingCarousel({
   }, []);
 
   const visibleElements = useMemo(() => {
-    const withPadding = items.concat(paddedItems);
-    return withPadding.slice(offset, offset + maxVisible);
-  }, [items, offset, paddedItems, maxVisible]);
+    return items
+      // if we're on the client side, prefer the current slots we can see.
+      // if we're on the server side, the maximum we're going to render is defined outside.
+      .slice(offset, offset + (visibilityList.current.size || maxServerRender))
+      .concat(paddedItems);
+  }, [items, offset, paddedItems, maxServerRender]);
 
   const showPrevious = useCallback(() => {
     const visibleCount = visibilityList.current.size;

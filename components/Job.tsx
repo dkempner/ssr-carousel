@@ -35,11 +35,17 @@ const mediaQueries = facepaint([
   "@media(min-width: 1280px)",
 ]);
 
+const itemWidth = (num: number) => {
+  return `calc(100% / ${num})`;
+};
+
 export default function Job({
   job,
+  id,
   visibilityList,
 }: {
   job?: JobsQueryJob;
+  id: string;
   visibilityList: MutableRefObject<Set<string>>;
 }) {
   const { data, error } = useQuery<JobQueryJobResult>(JOB_QUERY, {
@@ -57,14 +63,14 @@ export default function Job({
   });
 
   useEffect(() => {
-    if (inView && job) {
-      visibilityList.current.add(job.id);
+    if (inView && id) {
+      visibilityList.current.add(id);
     }
 
     return () => {
-      job && visibilityList.current.delete(job.id);
+      id && visibilityList.current.delete(id);
     };
-  }, [inView, job, visibilityList]);
+  }, [inView, id, visibilityList]);
 
   return (
     <li
@@ -72,7 +78,7 @@ export default function Job({
       className={inView ? "visible" : ""}
       css={mediaQueries({
         display: "inline-block",
-        width: ["50%", "25%", "20%", "12.5%"],
+        width: [itemWidth(2), itemWidth(4), itemWidth(5), itemWidth(8)],
       })}
     >
       <div
