@@ -78,15 +78,6 @@ export default function JobsCarousel({
             visibilityList={visibilityList}
           />
         ))}
-        {Array(20)
-          .fill(true)
-          .map((_, idx) => (
-            <Job
-              key={idx}
-              id={idx.toString()}
-              visibilityList={visibilityList}
-            />
-          ))}
       </ul>
     </div>
   );
@@ -128,7 +119,7 @@ function useWidthDetectingCarousel({
   };
 
   const paddedItems = useMemo<Item[]>(() => {
-    return Array(20)
+    return Array(maxServerRender)
       .fill(true)
       .map((_item, idx) => {
         return {
@@ -149,9 +140,9 @@ function useWidthDetectingCarousel({
           offset,
           offset + Math.max(visibilityList.current.size, maxSlots.current)
         )
-      // .concat(paddedItems)
+        .concat(paddedItems)
     );
-  }, [items, offset, maxSlots]);
+  }, [items, offset, maxSlots, paddedItems]);
 
   // recompute once on hydrate
   useEffect(() => {
