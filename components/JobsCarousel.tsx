@@ -23,7 +23,6 @@ export default function JobsCarousel({
   jobs: JobsQueryJob[];
   number: number;
 }) {
-  console.log("render carousel " + number);
   const ids = jobs.map((j) => j.id);
 
   const jobById = useMemo(() => {
@@ -126,7 +125,7 @@ function useWidthDetectingCarousel({
           id: `padding-${idx}`,
         };
       });
-  }, []);
+  }, [maxServerRender]);
 
   const visibleElements = useMemo(() => {
     if (visibilityList.current.size > maxSlots.current) {

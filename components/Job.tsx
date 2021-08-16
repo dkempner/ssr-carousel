@@ -82,7 +82,8 @@ export default function Job({
     >
       <div
         css={{
-          width: "75%",
+          marginLeft: "5%",
+          marginRight: "5%",
           overflow: "hidden",
         }}
       >

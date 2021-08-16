@@ -1,6 +1,8 @@
 /** @jsxImportSource @emotion/react */
 import { jsx } from "@emotion/react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, gql } from "@apollo/client";
+import { useInView } from "react-intersection-observer";
 import JobsCarousel from "../components/JobsCarousel";
 
 type JobsQueryJob = {
@@ -27,8 +29,24 @@ export const JOBS_QUERY = gql`
   }
 `;
 
+const ROWS_TO_LOAD = 4;
+
 function Storefront() {
-  const firstCarousel = useQuery<JobsQueryJobsResult>(JOBS_QUERY);
+  const carouselQuery = useQuery<JobsQueryJobsResult>(JOBS_QUERY);
+  const [visibleRows, setVisibleRows] = useState(ROWS_TO_LOAD);
+
+  const loadMore = useCallback(() => {
+    setTimeout(() => {
+      setVisibleRows((r) => r + ROWS_TO_LOAD);
+    }, 750);
+  }, []);
+
+  const loadMoreButton = useInView();
+
+  useEffect(() => {
+    const { inView } = loadMoreButton;
+    if (inView) loadMore();
+  });
 
   return (
     <>
@@ -60,19 +78,31 @@ function Storefront() {
           borderLeft: "1px solid black",
         }}
       >
-        {firstCarousel.loading ? (
+        {carouselQuery.loading ? (
           <></>
         ) : (
           <>
-            {Array(20)
+            {Array(visibleRows)
               .fill(true)
               .map((_, idx) => (
                 <JobsCarousel
                   key={idx}
                   number={idx}
-                  jobs={firstCarousel.data?.jobs || []}
+                  jobs={carouselQuery.data?.jobs || []}
                 ></JobsCarousel>
               ))}
+            <div
+              css={{
+                marginTop: 40,
+                marginBottom: 20,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <button ref={loadMoreButton.ref} onClick={loadMore}>
+                Load More
+              </button>
+            </div>
           </>
         )}
       </div>
