@@ -22,6 +22,7 @@ export const JOBS_QUERY = gql`
     jobs {
       id
       company {
+        id
         slug
       }
       slug

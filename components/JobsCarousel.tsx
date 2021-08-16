@@ -3,14 +3,7 @@ import { jsx } from "@emotion/react";
 import { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import { debounce } from "lodash";
 import Job from "./Job";
-
-type JobsQueryJob = {
-  id: string;
-  company: {
-    slug: string;
-  };
-  slug: string;
-};
+import type { JobsQueryJob } from './types'
 
 type Item = {
   id: string;
@@ -43,7 +36,7 @@ export default function JobsCarousel({
     nextDisabled,
   } = useWidthDetectingCarousel({
     items: ids.map((id) => ({ id })),
-    maxServerRender: 6,
+    maxServerRender: 25,
   });
 
   return (
@@ -67,6 +60,10 @@ export default function JobsCarousel({
           whiteSpace: "nowrap",
           margin: 0,
           padding: 0,
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 16,
+          height: 250,
         }}
       >
         {visibleElements?.map((item) => (

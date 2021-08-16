@@ -4,10 +4,7 @@ import { useQuery, gql } from "@apollo/client";
 import facepaint from "facepaint";
 import { useEffect, MutableRefObject, memo } from "react";
 import { useInView } from "react-intersection-observer";
-
-type JobQueryJob = {
-  id: string;
-};
+import type { JobsQueryJob, JobQueryJob } from './types'
 
 type JobQueryJobResult = {
   job: JobQueryJob;
@@ -17,17 +14,13 @@ export const JOB_QUERY = gql`
   query Job($input: JobInput!) {
     job(input: $input) {
       id
+      company {
+        id
+        websiteUrl
+      }
     }
   }
 `;
-
-type JobsQueryJob = {
-  id: string;
-  company: {
-    slug: string;
-  };
-  slug: string;
-};
 
 const mediaQueries = facepaint([
   "@media(min-width: 768px)",
@@ -82,15 +75,32 @@ export default function Job({
     >
       <div
         css={{
-          marginLeft: "5%",
-          marginRight: "5%",
           overflow: "hidden",
+          width: 110,
         }}
       >
+        <Logo company={data?.job.company} />
         <p>{data?.job.id}</p>
         <p>{job?.company.slug}</p>
         <p>{job?.slug}</p>
       </div>
     </li>
   );
+}
+
+function Logo({ company }: { company?: JobQueryJob["company"] }) {
+  if (!company) return null;
+  if (company.websiteUrl) {
+    return (
+      <div
+        css={{
+          width: 110,
+          height: 110,
+          backgroundImage: `url("https://logo.clearbit.com/${company.websiteUrl}?size=200")`,
+        }}
+      />
+    );
+  }
+
+  return null;
 }
