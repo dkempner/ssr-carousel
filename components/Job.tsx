@@ -4,7 +4,7 @@ import { useQuery, gql } from "@apollo/client";
 import facepaint from "facepaint";
 import { useEffect, MutableRefObject, memo } from "react";
 import { useInView } from "react-intersection-observer";
-import type { JobsQueryJob, JobQueryJob } from './types'
+import type { JobsQueryJob, JobQueryJob, WidthVariant } from "./types";
 
 type JobQueryJobResult = {
   job: JobQueryJob;
@@ -36,10 +36,12 @@ export default function Job({
   job,
   id,
   visibilityList,
+  width,
 }: {
   job?: JobsQueryJob;
   id: string;
   visibilityList: MutableRefObject<Set<string>>;
+  width: WidthVariant;
 }) {
   const { data, error } = useQuery<JobQueryJobResult>(JOB_QUERY, {
     variables: {
@@ -68,15 +70,19 @@ export default function Job({
   return (
     <li
       ref={inViewRef}
-      css={mediaQueries({
-        display: "inline-block",
-        width: [itemWidth(2), itemWidth(4), itemWidth(5), itemWidth(8)],
-      })}
+      css={
+        width === "MediaQuery"
+          ? mediaQueries({
+              display: "inline-block",
+              width: [itemWidth(2), itemWidth(4), itemWidth(5), itemWidth(8)],
+            })
+          : {}
+      }
     >
       <div
         css={{
           overflow: "hidden",
-          width: 110,
+          width: (width === 'Fixed' ? 110 : 'auto'),
         }}
       >
         <Logo company={data?.job.company} />

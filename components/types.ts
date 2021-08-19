@@ -15,3 +15,5 @@ export type JobQueryJob = {
   };
   slug: string;
 };
+
+export type WidthVariant = 'MediaQuery' | 'Fixed'
