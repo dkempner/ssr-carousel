@@ -1,34 +1,41 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# SSR Carousel Demo
 
-## Getting Started
+## Running
 
-First, run the development server:
+1. install deps with `yarn --frozen-lockfile`
+2. start dev server with `PORT=9999 yarn dev`
+3. visit localhost:9999/storefront in your browser
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+## Why?
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This demo explores several techniques for creating a carousel component which renders on the server, that's responsive, and that doesn't create large layout shifts once the page mounts.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+We believe that SSR content is our ticket to fast storefront cold starts, and unlocks better SEO bot crawling as well.
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.tsx`.
+## Techniques
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+### 1. Over-fetch data, use media queries to control amount shown
 
-## Learn More
+#### Pros
 
-To learn more about Next.js, take a look at the following resources:
+1. You can guarantee no overflows of content, ie you're showing exactly 5 items per row for this screen width.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### Cons
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+1. Overfetching means it's slower for everyone, and only benefits people with the biggest screens.
+2. Discrete number of sizes you support (unless you generate media queries programatically)
 
-## Deploy on Vercel
+### 2. Over-fetch data, use fixed-width items
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+#### Pros
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+1. Your only choice if your design requires fixed-width items
+
+#### Cons
+
+1. Overfetching means it's slower for everyone
+2. Items can overflow, showing a half item on the screen (might be a pro?)
+
+### 3. Under-fetch data, use media queries for width
+
+### 4. Under-fetch data, use fixed-width items

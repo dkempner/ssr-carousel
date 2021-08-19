@@ -1,9 +1,9 @@
 /** @jsxImportSource @emotion/react */
 import { jsx } from "@emotion/react";
 import { useMemo } from "react";
-import Job from "./Job";
-import { useWidthDetectingCarousel } from "./useWidthDetectingCarousel";
-import type { JobsQueryJob } from "./types";
+import Job from "../jobs/JobFixedWidth";
+import { useWidthDetectingCarousel } from "../useWidthDetectingCarousel";
+import type { JobsQueryJob } from "../types";
 
 export default function JobsCarousel({
   jobs,

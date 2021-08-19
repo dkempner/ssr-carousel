@@ -3,7 +3,7 @@ import { jsx } from "@emotion/react";
 import { useState, useCallback, useEffect } from "react";
 import { useQuery, gql } from "@apollo/client";
 import { useInView } from "react-intersection-observer";
-import JobsCarousel from "../components/JobsCarousel";
+import { One, Two, Three, Four } from "../components/carousels";
 
 type JobsQueryJob = {
   id: string;
@@ -32,6 +32,8 @@ export const JOBS_QUERY = gql`
 
 const ROWS_TO_LOAD = 4;
 
+const modToComponent = [One, Two, Three, Four];
+
 function Storefront() {
   const carouselQuery = useQuery<JobsQueryJobsResult>(JOBS_QUERY);
   const [visibleRows, setVisibleRows] = useState(ROWS_TO_LOAD);
@@ -46,7 +48,7 @@ function Storefront() {
 
   useEffect(() => {
     const { inView } = loadMoreButton;
-    if (inView) loadMore();
+    // if (inView) loadMore();
   });
 
   return (
@@ -85,13 +87,16 @@ function Storefront() {
           <>
             {Array(visibleRows)
               .fill(true)
-              .map((_, idx) => (
-                <JobsCarousel
-                  key={idx}
-                  number={idx}
-                  jobs={carouselQuery.data?.jobs || []}
-                ></JobsCarousel>
-              ))}
+              .map((_, idx) => {
+                const Component = modToComponent[idx % 4];
+                return (
+                  <Component
+                    key={idx}
+                    number={idx}
+                    jobs={carouselQuery.data?.jobs || []}
+                  ></Component>
+                );
+              })}
             <div
               css={{
                 marginTop: 40,

@@ -1,9 +1,9 @@
 /** @jsxImportSource @emotion/react */
 import { jsx } from "@emotion/react";
 import { useMemo } from "react";
-import Job from "./Job";
-import { useWidthDetectingCarousel } from "./useWidthDetectingCarousel";
-import type { JobsQueryJob } from "./types";
+import Job from "../jobs/JobMediaQueryWidth";
+import { useWidthDetectingCarousel } from "../useWidthDetectingCarousel";
+import type { JobsQueryJob } from "../types";
 
 export default function JobsCarousel({
   jobs,
@@ -56,9 +56,8 @@ export default function JobsCarousel({
           whiteSpace: "nowrap",
           margin: 0,
           padding: 0,
-          display: "flex",
+          display: "block",
           justifyContent: "space-between",
-          gap: 16,
           height: 250,
         }}
       >

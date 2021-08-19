@@ -1,9 +1,9 @@
 /** @jsxImportSource @emotion/react */
 import { jsx } from "@emotion/react";
 import { useMemo } from "react";
-import Job from "./Job";
-import { useWidthDetectingCarousel } from "./useWidthDetectingCarousel";
-import type { JobsQueryJob } from "./types";
+import Job from "../jobs/JobFixedWidth";
+import { useWidthDetectingCarousel } from "../useWidthDetectingCarousel";
+import type { JobsQueryJob } from "../types";
 
 export default function JobsCarousel({
   jobs,
@@ -32,7 +32,7 @@ export default function JobsCarousel({
     nextDisabled,
   } = useWidthDetectingCarousel({
     items: ids.map((id) => ({ id })),
-    maxServerRender: 25,
+    maxServerRender: 5,
   });
 
   return (
