@@ -35,22 +35,34 @@ const ROWS_TO_LOAD = 4;
 const modToComponent = [
   (props: any) => {
     return (
-      <JobsCarousel {...props} width={"MediaQuery"} maxServerRender={25} />
+      <>
+        <h1>Overfetch + Media Query Width</h1>
+        <JobsCarousel {...props} width={"MediaQuery"} maxServerRender={25} />
+      </>
     );
   },
   (props: any) => {
     return (
-      <JobsCarousel {...props} width={"Fixed"} maxServerRender={25} />
+      <>
+        <h1>Overfetch + Fixed Width</h1>
+        <JobsCarousel {...props} width={"Fixed"} maxServerRender={25} />
+      </>
     );
   },
   (props: any) => {
     return (
-      <JobsCarousel {...props} width={"MediaQuery"} maxServerRender={5} />
+      <>
+        <h1>Underfetch + Media Query Width</h1>
+        <JobsCarousel {...props} width={"MediaQuery"} maxServerRender={5} />
+      </>
     );
   },
   (props: any) => {
     return (
-      <JobsCarousel {...props} width={"Fixed"} maxServerRender={5} />
+      <>
+        <h1>Underfetch + Fixed Width</h1>
+        <JobsCarousel {...props} width={"Fixed"} maxServerRender={5} />
+      </>
     );
   },
 ];
@@ -69,7 +81,7 @@ function Storefront() {
 
   useEffect(() => {
     const { inView } = loadMoreButton;
-    // if (inView) loadMore();
+    if (inView) loadMore();
   });
 
   return (
