@@ -70,19 +70,20 @@ export default function Job({
   return (
     <li
       ref={inViewRef}
-      css={
+      css={[
         width === "MediaQuery"
           ? mediaQueries({
               display: "inline-block",
               width: [itemWidth(2), itemWidth(4), itemWidth(5), itemWidth(8)],
             })
-          : {}
-      }
+          : {},
+        { border: "1px solid black" },
+      ]}
     >
       <div
         css={{
           overflow: "hidden",
-          width: (width === 'Fixed' ? 110 : 'auto'),
+          width: width === "Fixed" ? 110 : "auto",
         }}
       >
         <Logo company={data?.job.company} />
@@ -100,11 +101,24 @@ function Logo({ company }: { company?: JobQueryJob["company"] }) {
     return (
       <div
         css={{
-          width: 110,
-          height: 110,
-          backgroundImage: `url("https://logo.clearbit.com/${company.websiteUrl}?size=200")`,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          width: '100%'
         }}
-      />
+      >
+        <div
+          css={{
+            width: '100%',
+            maxWidth: 200,
+            height: 110,
+            backgroundImage: `url("https://logo.clearbit.com/${company.websiteUrl}?size=200")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            backgroundSize: 'contain'
+          }}
+        />
+      </div>
     );
   }
 
