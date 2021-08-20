@@ -30,7 +30,7 @@ export const JOBS_QUERY = gql`
   }
 `;
 
-const ROWS_TO_LOAD = 4;
+const ROWS_TO_LOAD = 5;
 
 const modToComponent = [
   (props: any) => {
@@ -64,6 +64,9 @@ const modToComponent = [
         <JobsCarousel {...props} width={"Fixed"} maxServerRender={5} />
       </>
     );
+  },
+  () => {
+    return <div css={{ height: 1200 }}>Big Open Space</div>;
   },
 ];
 
@@ -121,7 +124,7 @@ function Storefront() {
             {Array(visibleRows)
               .fill(true)
               .map((_, idx) => {
-                const Component = modToComponent[idx % 4];
+                const Component = modToComponent[idx % 5];
                 return (
                   <Component
                     key={idx}
