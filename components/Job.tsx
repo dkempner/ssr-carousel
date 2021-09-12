@@ -84,7 +84,7 @@ export default function Job({
       <div
         css={{
           overflow: "hidden",
-          width: width === "Fixed" ? 110 : "auto",
+          // width: width === "Fixed" ? 110 : "auto",
         }}
       >
         <Logo company={data?.job.company} />
