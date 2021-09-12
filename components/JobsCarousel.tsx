@@ -11,9 +11,11 @@ const FixedWidthStyles: CSSObject = {
   whiteSpace: "nowrap",
   margin: 0,
   padding: 0,
-  display: "flex",
+  display: "grid",
+  gridTemplateColumns: `repeat(auto-fill, 110px)`,
   justifyContent: "space-between",
-  gap: 16,
+  gridAutoFlow: 'column',
+  gridGap: 16,
   height: 250,
 };
 

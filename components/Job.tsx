@@ -69,6 +69,7 @@ export default function Job({
 
   return (
     <li
+      data-id={id}
       ref={inViewRef}
       css={[
         width === "MediaQuery"

@@ -54,20 +54,49 @@ export function useWidthDetectingCarousel({
     if (visibilityList.current.size > maxSlots.current) {
       maxSlots.current = visibilityList.current.size;
     }
+    console.log({
+      visibilityList: visibilityList.current.size,
+      maxSlots: maxSlots.current,
+    });
     return (
       items
         // if we're on the client side, prefer the current slots we can see.
         // if we're on the server side, the maximum we're going to render is defined outside.
         .slice(
           offset,
-          offset + Math.max(visibilityList.current.size, maxSlots.current)
+          offset +
+            (Math.max(visibilityList.current.size, maxSlots.current) ||
+              maxServerRender)
         )
         .concat(paddedItems)
     );
-  }, [items, offset, maxSlots, paddedItems]);
+  }, [items, offset, maxSlots, paddedItems, maxServerRender]);
 
   // recompute once on hydrate
   useEffect(() => {
+    forceUpdate();
+  }, [forceUpdate]);
+
+  useEffect(() => {
+    const setMaxSlots = debounce(() => {
+      maxSlots.current = Array.from(visibilityList.current).filter(
+        (l) => !l.includes("-padding")
+      ).length;
+      forceUpdate();
+    }, 500);
+
+    window.addEventListener("resize", setMaxSlots);
+
+    return () => {
+      window.removeEventListener("resize", setMaxSlots);
+    };
+  }, [forceUpdate]);
+
+  useEffect(() => {
+    console.log("should only see this run once per row");
+    maxSlots.current = Array.from(visibilityList.current).filter(
+      (l) => !l.includes("-padding")
+    ).length;
     forceUpdate();
   }, [forceUpdate]);
 
