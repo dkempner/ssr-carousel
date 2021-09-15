@@ -54,7 +54,7 @@ export default function Job({
   });
 
   const { ref: inViewRef, inView } = useInView({
-    threshold: 0.1,
+    threshold: 1,
   });
 
   useEffect(() => {
