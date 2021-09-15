@@ -32,43 +32,58 @@ export const JOBS_QUERY = gql`
 
 const ROWS_TO_LOAD = 5;
 
-const modToComponent = [
-  (props: any) => {
-    return (
-      <>
-        <h1>Overfetch + Media Query Width</h1>
-        <JobsCarousel {...props} width={"MediaQuery"} maxServerRender={25} />
-      </>
-    );
-  },
-  (props: any) => {
-    return (
-      <>
-        <h1>Overfetch + Fixed Width</h1>
-        <JobsCarousel {...props} width={"Fixed"} maxServerRender={25} />
-      </>
-    );
-  },
-  (props: any) => {
-    return (
-      <>
-        <h1>Underfetch + Media Query Width</h1>
-        <JobsCarousel {...props} width={"MediaQuery"} maxServerRender={5} />
-      </>
-    );
-  },
-  (props: any) => {
-    return (
-      <>
-        <h1>Underfetch + Fixed Width</h1>
-        <JobsCarousel {...props} width={"Fixed"} maxServerRender={5} />
-      </>
-    );
-  },
-  () => {
-    return <div css={{ height: 1200 }}>Big Open Space</div>;
-  },
-];
+const overfetchFixedWidth = (props: any) => {
+  return (
+    <>
+      <h1>Overfetch + Fixed Width</h1>
+      <JobsCarousel {...props} width={"Fixed"} maxServerRender={25} />
+    </>
+  );
+};
+
+const emptySpace = () => {
+  return <div css={{ height: 1200 }}>Big Open Space</div>;
+};
+
+// const modToComponent = [
+//   (props: any) => {
+//     return (
+//       <>
+//         <h1>Overfetch + Media Query Width</h1>
+//         <JobsCarousel {...props} width={"MediaQuery"} maxServerRender={25} />
+//       </>
+//     );
+//   },
+//   (props: any) => {
+//     return (
+//       <>
+//         <h1>Overfetch + Fixed Width</h1>
+//         <JobsCarousel {...props} width={"Fixed"} maxServerRender={25} />
+//       </>
+//     );
+//   },
+//   (props: any) => {
+//     return (
+//       <>
+//         <h1>Underfetch + Media Query Width</h1>
+//         <JobsCarousel {...props} width={"MediaQuery"} maxServerRender={5} />
+//       </>
+//     );
+//   },
+//   (props: any) => {
+//     return (
+//       <>
+//         <h1>Underfetch + Fixed Width</h1>
+//         <JobsCarousel {...props} width={"Fixed"} maxServerRender={5} />
+//       </>
+//     );
+//   },
+//   () => {
+//     return <div css={{ height: 1200 }}>Big Open Space</div>;
+//   },
+// ];
+
+const modToComponent = [overfetchFixedWidth, overfetchFixedWidth, overfetchFixedWidth, overfetchFixedWidth, emptySpace]
 
 function Storefront() {
   const carouselQuery = useQuery<JobsQueryJobsResult>(JOBS_QUERY);
