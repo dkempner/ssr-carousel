@@ -114,13 +114,9 @@ export function useWidthDetectingCarousel({
     return offset + visibilityList.current.size > items.length - 1;
   }, [offset, items]);
 
-  const totalPages = useMemo(() => {
-    return Math.ceil(items.length / maxSlots.current);
-  }, [maxSlots, items]);
+  const totalPages = Math.ceil(items.length / maxSlots.current);
 
-  const currentPage = useMemo(() => {
-    return Math.ceil(offset / maxSlots.current) + 1;
-  }, [offset, maxSlots, totalPages]);
+  const currentPage = Math.ceil(offset / maxSlots.current) + 1;
 
   return {
     visibleElements,
