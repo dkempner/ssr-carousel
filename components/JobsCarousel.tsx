@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Job from "./Job";
 import { useWidthDetectingCarousel } from "./useWidthDetectingCarousel";
 import type { JobsQueryJob, WidthVariant } from "./types";
+import { useIsMobile } from "./useIsMobile";
 
 const FixedWidthStyles: CSSObject = {
   listStyle: "none",
@@ -14,7 +15,7 @@ const FixedWidthStyles: CSSObject = {
   display: "grid",
   gridTemplateColumns: `repeat(1000, 157px)`,
   justifyContent: "space-between",
-  gridAutoFlow: 'column',
+  gridAutoFlow: "column",
   gridGap: 16,
   height: 250,
 };
@@ -40,6 +41,7 @@ export default function JobsCarousel({
   maxServerRender: number;
   width: WidthVariant;
 }) {
+  const isMobile = useIsMobile();
   const ids = jobs.map((j) => j.id);
 
   const jobById = useMemo(() => {
@@ -59,10 +61,11 @@ export default function JobsCarousel({
     previousDisabled,
     nextDisabled,
     currentPage,
-    totalPages
+    totalPages,
   } = useWidthDetectingCarousel({
     items: ids.map((id) => ({ id })),
     maxServerRender,
+    staticRenderCount: isMobile ? 20 : undefined,
   });
 
   return (
@@ -71,9 +74,7 @@ export default function JobsCarousel({
         ({number}) Currently Visible: {offset} -{" "}
         {offset + (visibilityList.current.size - 1)}
       </p>
-      <p>
-        {`Page ${currentPage} / ${totalPages}`}
-      </p>
+      <p>{`Page ${currentPage} / ${totalPages}`}</p>
       <div>
         <button onClick={showPrevious} disabled={previousDisabled}>
           Previous
@@ -82,7 +83,19 @@ export default function JobsCarousel({
           Next
         </button>
       </div>
-      <ul css={width === "Fixed" ? FixedWidthStyles : MediaQueryStyles}>
+      <ul
+        css={[
+          width === "Fixed" ? FixedWidthStyles : MediaQueryStyles,
+          {
+            ...(isMobile
+              ? {
+                  overflowX: "scroll",
+                  gridTemplateColumns: "repeat(20, 157px)",
+                }
+              : {}),
+          },
+        ]}
+      >
         {visibleElements?.map((item) => (
           <Job
             key={item.id}

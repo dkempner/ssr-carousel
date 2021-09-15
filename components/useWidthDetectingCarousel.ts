@@ -9,11 +9,13 @@ type Item = {
 type UseWidthDetectingCarouselProps = {
   items: Item[];
   maxServerRender: number;
+  staticRenderCount?: number;
 };
 
 export function useWidthDetectingCarousel({
   items,
   maxServerRender,
+  staticRenderCount,
 }: UseWidthDetectingCarouselProps) {
   const visibilityList = useRef(new Set<string>());
   const maxSlots = useRef(maxServerRender);
@@ -22,10 +24,11 @@ export function useWidthDetectingCarousel({
   const [_, setTrigger] = useState(Math.random());
 
   const forceUpdate = useMemo(() => {
+    if (staticRenderCount) return () => {};
     return debounce(() => {
       setTrigger(Math.random());
     }, 500);
-  }, [setTrigger]);
+  }, [setTrigger, staticRenderCount]);
 
   const originalAdd = visibilityList.current.add.bind(visibilityList.current);
   visibilityList.current.add = (x: string) => {
@@ -52,6 +55,8 @@ export function useWidthDetectingCarousel({
   }, [maxServerRender]);
 
   const visibleElements = useMemo(() => {
+    if (staticRenderCount) return items.slice(0, staticRenderCount);
+
     if (visibilityList.current.size > maxSlots.current) {
       maxSlots.current = visibilityList.current.size;
     }
@@ -66,7 +71,14 @@ export function useWidthDetectingCarousel({
         )
         .concat(paddedItems)
     );
-  }, [items, offset, maxSlots, paddedItems, maxServerRender]);
+  }, [
+    staticRenderCount,
+    items,
+    offset,
+    maxSlots,
+    paddedItems,
+    maxServerRender,
+  ]);
 
   // recompute once on hydrate
   useEffect(() => {
@@ -114,9 +126,13 @@ export function useWidthDetectingCarousel({
     return offset + visibilityList.current.size > items.length - 1;
   }, [offset, items]);
 
-  const totalPages = Math.ceil(items.length / maxSlots.current);
+  const totalPages = staticRenderCount
+    ? 1
+    : Math.ceil(items.length / maxSlots.current);
 
-  const currentPage = Math.ceil(offset / maxSlots.current) + 1;
+  const currentPage = staticRenderCount
+    ? 1
+    : Math.ceil(offset / maxSlots.current) + 1;
 
   return {
     visibleElements,

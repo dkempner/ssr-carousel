@@ -83,7 +83,13 @@ const emptySpace = () => {
 //   },
 // ];
 
-const modToComponent = [overfetchFixedWidth, overfetchFixedWidth, overfetchFixedWidth, overfetchFixedWidth, emptySpace]
+const modToComponent = [
+  overfetchFixedWidth,
+  overfetchFixedWidth,
+  overfetchFixedWidth,
+  overfetchFixedWidth,
+  emptySpace,
+];
 
 function Storefront() {
   const carouselQuery = useQuery<JobsQueryJobsResult>(JOBS_QUERY);
@@ -117,9 +123,14 @@ function Storefront() {
       </header>
       <div
         css={{
-          position: "fixed",
-          width: 260,
-          height: `calc(100% - 80px)`,
+          "@media(min-width: 0px)": {
+            display: "none",
+          },
+          "@media(min-width: 768px)": {
+            position: "fixed",
+            width: 260,
+            height: `calc(100% - 80px)`,
+          },
         }}
       >
         Side Nav
@@ -127,9 +138,11 @@ function Storefront() {
       <div
         css={{
           height: "100%",
-          marginLeft: 260,
           borderTop: "1px solid black",
           borderLeft: "1px solid black",
+          "@media(min-width: 768px)": {
+            marginLeft: 260,
+          },
         }}
       >
         {carouselQuery.loading ? (
