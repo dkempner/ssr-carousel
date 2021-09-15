@@ -58,6 +58,8 @@ export default function JobsCarousel({
     showNext,
     previousDisabled,
     nextDisabled,
+    currentPage,
+    totalPages
   } = useWidthDetectingCarousel({
     items: ids.map((id) => ({ id })),
     maxServerRender,
@@ -68,6 +70,9 @@ export default function JobsCarousel({
       <p>
         ({number}) Currently Visible: {offset} -{" "}
         {offset + (visibilityList.current.size - 1)}
+      </p>
+      <p>
+        {`Page ${currentPage} / ${totalPages}`}
       </p>
       <div>
         <button onClick={showPrevious} disabled={previousDisabled}>
