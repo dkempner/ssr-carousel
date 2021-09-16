@@ -17,7 +17,7 @@ export function useWidthDetectingCarousel({
   maxServerRender,
   staticRenderCount,
 }: UseWidthDetectingCarouselProps) {
-  const visibilityList = useRef(new Set<string>());
+  const visibilityList = useRef(new Map<string, number>());
   const maxSlots = useRef(maxServerRender);
   const [offset, setOffset] = useState(0);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -30,10 +30,12 @@ export function useWidthDetectingCarousel({
     }, 500);
   }, [setTrigger, staticRenderCount]);
 
-  const originalAdd = visibilityList.current.add.bind(visibilityList.current);
-  visibilityList.current.add = (x: string) => {
+  const originalSet = visibilityList.current.set.bind(visibilityList.current);
+  visibilityList.current.set = (key: string, value: number) => {
+    if (visibilityList.current.get(key) === value)
+      return visibilityList.current;
     forceUpdate();
-    return originalAdd(x);
+    return originalSet(key, value);
   };
 
   const originalDelete = visibilityList.current.delete.bind(
@@ -108,14 +110,18 @@ export function useWidthDetectingCarousel({
   }, [forceUpdate]);
 
   const showPrevious = useCallback(() => {
-    const visibleCount = visibilityList.current.size;
-    const desired = offset - visibleCount;
+    const allIntersections = Array.from(visibilityList.current.values())
+    const maxIntersection = Math.max(...allIntersections)
+    const fullyVisibleItems = allIntersections.filter(i => i === maxIntersection).length
+    const desired = offset - fullyVisibleItems;
     setOffset(desired >= 0 ? desired : 0);
   }, [offset]);
 
   const showNext = useCallback(() => {
-    const visibleCount = visibilityList.current.size;
-    setOffset(offset + visibleCount);
+    const allIntersections = Array.from(visibilityList.current.values())
+    const maxIntersection = Math.max(...allIntersections)
+    const fullyVisibleItems = allIntersections.filter(i => i === maxIntersection).length
+    setOffset(offset + fullyVisibleItems);
   }, [offset]);
 
   const previousDisabled = useMemo(() => {
