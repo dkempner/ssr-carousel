@@ -109,20 +109,20 @@ export function useWidthDetectingCarousel({
     forceUpdate();
   }, [forceUpdate]);
 
+  const allIntersections = Array.from(visibilityList.current.values());
+  const maxIntersection = Math.max(...allIntersections);
+  const fullyVisibleItems = allIntersections.filter(
+    (i) => i === maxIntersection
+  ).length;
+
   const showPrevious = useCallback(() => {
-    const allIntersections = Array.from(visibilityList.current.values())
-    const maxIntersection = Math.max(...allIntersections)
-    const fullyVisibleItems = allIntersections.filter(i => i === maxIntersection).length
     const desired = offset - fullyVisibleItems;
     setOffset(desired >= 0 ? desired : 0);
-  }, [offset]);
+  }, [offset, fullyVisibleItems]);
 
   const showNext = useCallback(() => {
-    const allIntersections = Array.from(visibilityList.current.values())
-    const maxIntersection = Math.max(...allIntersections)
-    const fullyVisibleItems = allIntersections.filter(i => i === maxIntersection).length
     setOffset(offset + fullyVisibleItems);
-  }, [offset]);
+  }, [offset, fullyVisibleItems]);
 
   const previousDisabled = useMemo(() => {
     return offset === 0;
@@ -134,11 +134,11 @@ export function useWidthDetectingCarousel({
 
   const totalPages = staticRenderCount
     ? 1
-    : Math.ceil(items.length / maxSlots.current);
+    : Math.ceil(items.length / fullyVisibleItems);
 
   const currentPage = staticRenderCount
     ? 1
-    : Math.ceil(offset / maxSlots.current) + 1;
+    : Math.ceil(offset / fullyVisibleItems) + 1;
 
   return {
     visibleElements,
