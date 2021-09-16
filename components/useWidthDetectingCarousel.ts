@@ -17,7 +17,7 @@ export function useWidthDetectingCarousel({
   maxServerRender,
   staticRenderCount,
 }: UseWidthDetectingCarouselProps) {
-  const visibilityList = useRef(new Set<string>());
+  const visibilityList = useRef(new Map<string, number>());
   const maxSlots = useRef(maxServerRender);
   const [offset, setOffset] = useState(0);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -30,10 +30,12 @@ export function useWidthDetectingCarousel({
     }, 500);
   }, [setTrigger, staticRenderCount]);
 
-  const originalAdd = visibilityList.current.add.bind(visibilityList.current);
-  visibilityList.current.add = (x: string) => {
+  const originalSet = visibilityList.current.set.bind(visibilityList.current);
+  visibilityList.current.set = (key: string, value: number) => {
+    if (visibilityList.current.get(key) === value)
+      return visibilityList.current;
     forceUpdate();
-    return originalAdd(x);
+    return originalSet(key, value);
   };
 
   const originalDelete = visibilityList.current.delete.bind(
@@ -57,16 +59,23 @@ export function useWidthDetectingCarousel({
   const visibleElements = useMemo(() => {
     if (staticRenderCount) return items.slice(0, staticRenderCount);
 
+    const allIntersections = Array.from(visibilityList.current.values());
+    const maxIntersection = Math.max(...allIntersections);
+    const maxIntersectionCount = allIntersections.filter(
+      (i) => i === maxIntersection
+    ).length;
+
     if (visibilityList.current.size > maxSlots.current) {
-      maxSlots.current = visibilityList.current.size;
+      maxSlots.current = maxIntersectionCount;
     }
+
     return (
       items
         // if we're on the client side, prefer the current slots we can see.
         // if we're on the server side, the maximum we're going to render is defined outside.
         .slice(
           offset,
-          offset + Math.max(visibilityList.current.size, maxSlots.current) ||
+          offset + Math.max(maxIntersectionCount, maxSlots.current) ||
             maxServerRender
         )
         .concat(paddedItems)

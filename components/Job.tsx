@@ -40,7 +40,7 @@ export default function Job({
 }: {
   job?: JobsQueryJob;
   id: string;
-  visibilityList: MutableRefObject<Set<string>>;
+  visibilityList: MutableRefObject<Map<string, number>>;
   width: WidthVariant;
 }) {
   const { data, error } = useQuery<JobQueryJobResult>(JOB_QUERY, {
@@ -53,19 +53,19 @@ export default function Job({
     skip: !job,
   });
 
-  const { ref: inViewRef, inView } = useInView({
-    threshold: 1,
+  const { ref: inViewRef, inView, entry } = useInView({
+    threshold: [0, 1],
   });
 
   useEffect(() => {
-    if (inView && id) {
-      visibilityList.current.add(id);
+    if (inView && id && entry) {
+      visibilityList.current.set(id, entry.intersectionRatio);
     }
 
     return () => {
       id && visibilityList.current.delete(id);
     };
-  }, [inView, id, visibilityList]);
+  }, [inView, id, entry, visibilityList]);
 
   return (
     <li
