@@ -25,7 +25,8 @@ export function useWidthDetectingCarousel({
 }: UseWidthDetectingCarouselProps) {
   const visibilityList = useRef(new Map<string, number>());
   const maxSlots = useRef(maxServerRender);
-  const [offset, setOffset] = useState(0);
+  const currentFirst = useRef(items[0]);
+  const offset = items.findIndex(i => i.id === currentFirst.current.id)
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setTrigger] = useState(Math.random());
 
@@ -61,6 +62,12 @@ export function useWidthDetectingCarousel({
         };
       });
   }, [maxServerRender]);
+  
+  const allIntersections = Array.from(visibilityList.current.values());
+  const maxIntersection = Math.max(...allIntersections);
+  const fullyVisibleItems = allIntersections.filter(
+    (i) => i === maxIntersection
+  ).length;
 
   const visibleElements = useMemo(() => {
     if (staticRenderCount) return items.slice(0, staticRenderCount);
@@ -73,20 +80,13 @@ export function useWidthDetectingCarousel({
         // if we're on the client side, prefer the current slots we can see.
         // if we're on the server side, the maximum we're going to render is defined outside.
         .slice(
-          offset,
-          offset + Math.max(visibilityList.current.size, maxSlots.current) ||
+          0,
+          offset + fullyVisibleItems * 2 ||
             maxServerRender
         )
         .concat(paddedItems)
     );
-  }, [
-    staticRenderCount,
-    items,
-    offset,
-    maxSlots,
-    paddedItems,
-    maxServerRender,
-  ]);
+  }, [staticRenderCount, items, maxSlots, offset, fullyVisibleItems, paddedItems, maxServerRender]);
 
   // recompute once on hydrate
   useEffect(() => {
@@ -115,43 +115,31 @@ export function useWidthDetectingCarousel({
     forceUpdate();
   }, [forceUpdate]);
 
-  const allIntersections = Array.from(visibilityList.current.values());
-  const maxIntersection = Math.max(...allIntersections);
-  const fullyVisibleItems = allIntersections.filter(
-    (i) => i === maxIntersection
-  ).length;
+
 
   const showPrevious = useCallback(() => {
-    const desired = offset - fullyVisibleItems;
-    setOffset(desired >= 0 ? desired : 0);
-  }, [offset, fullyVisibleItems]);
+    // const desired = offset - fullyVisibleItems;
+    // setOffset(desired >= 0 ? desired : 0);
+  }, []);
 
-  const showNext = useCallback(async ({startAnimation, endAnimation}) => {
-    const nextOffsetStart = offset + fullyVisibleItems;
-    const nextOffsetEnd = nextOffsetStart + visibilityList.current.size;
-    const currentList = Array.from(visibilityList.current.keys());
-    const nextBatch = items.slice(nextOffsetStart, nextOffsetEnd);
-    const currentListExclusive = currentList.filter(
-      (i) => !nextBatch.map((i) => i.id).includes(i)
-    );
+  const showNext = useCallback(
+    async ({ startAnimation, endAnimation }) => {
+      const nextOffsetStart =
+        items.findIndex(i => i.id === currentFirst.current.id) + fullyVisibleItems;
+      const nextOffsetEnd = nextOffsetStart + visibilityList.current.size;
+      const nextBatch = items.slice(nextOffsetStart, nextOffsetEnd);
 
-    nextBatch.forEach((i) => {
-      visibilityList.current.set(i.id, 1);
-    });
+      nextBatch.forEach((i) => {
+        visibilityList.current.set(i.id, 1);
+      });
 
-    startAnimation(nextBatch[0].id)
-
-    await wait(250)
-
-    // currentListExclusive.forEach((id) => {
-    //   visibilityList.current.delete(id);
-    //   console.log(visibilityList.current.size)
-    // });
-
-    endAnimation()
-
-    // setOffset(offset + fullyVisibleItems);
-  }, [offset, fullyVisibleItems, items]);
+      setTrigger(Math.random());
+      startAnimation(nextBatch[0].id);
+      currentFirst.current = nextBatch[0];
+      endAnimation();
+    },
+    [fullyVisibleItems, items]
+  );
 
   const previousDisabled = useMemo(() => {
     return offset === 0;

@@ -106,11 +106,6 @@ export default function JobsCarousel({
                   }
                 : {}),
             },
-            {
-              transitionTimingFunction: 'ease-in',
-              transitionProperty: 'transform',
-              transitionDuration: '250ms',          
-            }
           ]}
         >
           {visibleElements?.map((item) => (
@@ -138,16 +133,23 @@ export default function JobsCarousel({
                 const el = carouselEl.current;
                 const newFirstItem = el?.querySelector(`[data-id=${id}]`);
                 if (!el || !newFirstItem) return;
-                const newScrollLeft =
-                  newFirstItem.getBoundingClientRect().x -
-                  el.getBoundingClientRect().x;
 
-                el.style.transform = `translateX(-${newScrollLeft}px)`;
+                const existingScrollLeft = el.scrollLeft || 0;
+
+                const newScrollLeft =
+                  existingScrollLeft +
+                  (newFirstItem.getBoundingClientRect().x -
+                    el.getBoundingClientRect().x);
+
+                el.scroll({
+                  left: newScrollLeft,
+                  behavior: "smooth",
+                });
               },
               endAnimation: () => {
                 const el = carouselEl.current;
                 if (!el) return;
-                el.style.transform = `translateX(0px)`;
+                // el.style.transform = `translateX(0px)`;
               },
             })}
             disabled={nextDisabled}
