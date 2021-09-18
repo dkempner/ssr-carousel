@@ -1,6 +1,6 @@
 /** @jsxImportSource @emotion/react */
-import { CSSObject, jsx } from "@emotion/react";
-import { useMemo } from "react";
+import { CSSObject, jsx, keyframes } from "@emotion/react";
+import { useMemo, useRef } from "react";
 import Job from "./Job";
 import { useWidthDetectingCarousel } from "./useWidthDetectingCarousel";
 import type { JobsQueryJob, WidthVariant } from "./types";
@@ -52,6 +52,8 @@ export default function JobsCarousel({
     return hash;
   }, [jobs]);
 
+  const carouselEl = useRef<HTMLUListElement>(null);
+
   const {
     visibleElements,
     visibilityList,
@@ -75,37 +77,85 @@ export default function JobsCarousel({
         {offset + (visibilityList.current.size - 1)}
       </p>
       <p>{`Page ${currentPage} / ${totalPages}`}</p>
-      <div>
-        <button onClick={showPrevious} disabled={previousDisabled}>
-          Previous
-        </button>
-        <button onClick={showNext} disabled={nextDisabled}>
-          Next
-        </button>
-      </div>
-      <ul
-        css={[
-          width === "Fixed" ? FixedWidthStyles : MediaQueryStyles,
-          {
-            ...(isMobile
-              ? {
-                  overflowX: "scroll",
-                  gridTemplateColumns: "repeat(20, 157px)",
-                }
-              : {}),
-          },
-        ]}
+      <div
+        css={{ display: "flex", flexDirection: "row", position: "relative" }}
       >
-        {visibleElements?.map((item) => (
-          <Job
-            key={item.id}
-            id={item.id}
-            job={jobById[item.id]}
-            visibilityList={visibilityList}
-            width={width}
-          />
-        ))}
-      </ul>
+        <div
+          css={{
+            position: "absolute",
+            left: 0,
+            display: "flex",
+            alignSelf: "center",
+            marginLeft: "-28px",
+          }}
+        >
+          <button onClick={showPrevious} disabled={previousDisabled}>
+            Previous
+          </button>
+        </div>
+
+        <ul
+          ref={carouselEl}
+          css={[
+            width === "Fixed" ? FixedWidthStyles : MediaQueryStyles,
+            {
+              ...(isMobile
+                ? {
+                    overflowX: "scroll",
+                    gridTemplateColumns: "repeat(20, 157px)",
+                  }
+                : {}),
+            },
+            {
+              transitionTimingFunction: 'ease-in',
+              transitionProperty: 'transform',
+              transitionDuration: '250ms',          
+            }
+          ]}
+        >
+          {visibleElements?.map((item) => (
+            <Job
+              key={item.id}
+              id={item.id}
+              job={jobById[item.id]}
+              visibilityList={visibilityList}
+              width={width}
+            />
+          ))}
+        </ul>
+        <div
+          css={{
+            position: "absolute",
+            right: 0,
+            display: "flex",
+            alignSelf: "center",
+            marginRight: "-28px",
+          }}
+        >
+          <button
+            onClick={showNext.bind(null, {
+              startAnimation: (id: string) => {
+                const el = carouselEl.current;
+                const newFirstItem = el?.querySelector(`[data-id=${id}]`);
+                if (!el || !newFirstItem) return;
+                const newScrollLeft =
+                  newFirstItem.getBoundingClientRect().x -
+                  el.getBoundingClientRect().x;
+
+                el.style.transform = `translateX(-${newScrollLeft}px)`;
+              },
+              endAnimation: () => {
+                const el = carouselEl.current;
+                if (!el) return;
+                el.style.transform = `translateX(0px)`;
+              },
+            })}
+            disabled={nextDisabled}
+          >
+            Next
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

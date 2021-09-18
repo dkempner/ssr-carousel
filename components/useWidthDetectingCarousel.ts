@@ -12,6 +12,12 @@ type UseWidthDetectingCarouselProps = {
   staticRenderCount?: number;
 };
 
+const wait = async (time: number) => {
+  return new Promise((res) => {
+    setTimeout(res, time);
+  });
+};
+
 export function useWidthDetectingCarousel({
   items,
   maxServerRender,
@@ -120,9 +126,32 @@ export function useWidthDetectingCarousel({
     setOffset(desired >= 0 ? desired : 0);
   }, [offset, fullyVisibleItems]);
 
-  const showNext = useCallback(() => {
-    setOffset(offset + fullyVisibleItems);
-  }, [offset, fullyVisibleItems]);
+  const showNext = useCallback(async ({startAnimation, endAnimation}) => {
+    const nextOffsetStart = offset + fullyVisibleItems;
+    const nextOffsetEnd = nextOffsetStart + visibilityList.current.size;
+    const currentList = Array.from(visibilityList.current.keys());
+    const nextBatch = items.slice(nextOffsetStart, nextOffsetEnd);
+    const currentListExclusive = currentList.filter(
+      (i) => !nextBatch.map((i) => i.id).includes(i)
+    );
+
+    nextBatch.forEach((i) => {
+      visibilityList.current.set(i.id, 1);
+    });
+
+    startAnimation(nextBatch[0].id)
+
+    await wait(250)
+
+    // currentListExclusive.forEach((id) => {
+    //   visibilityList.current.delete(id);
+    //   console.log(visibilityList.current.size)
+    // });
+
+    endAnimation()
+
+    // setOffset(offset + fullyVisibleItems);
+  }, [offset, fullyVisibleItems, items]);
 
   const previousDisabled = useMemo(() => {
     return offset === 0;

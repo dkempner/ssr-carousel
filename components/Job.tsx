@@ -70,6 +70,23 @@ export default function Job({
     };
   }, [inView, id, entry, visibilityList]);
 
+  const isOverflowingWidth = (() => {
+    if (!entry || !inView) return false;
+    const {
+      boundingClientRect: { width: boundingWidth },
+      intersectionRect: { width: intersectionWidth },
+    } = entry;
+
+    if (intersectionWidth === 0) return false;
+
+    if (boundingWidth === intersectionWidth) return false;
+
+    return intersectionWidth / boundingWidth < 0.5;
+  })();
+
+  const isPadding = id.includes("padding-");
+
+
   return (
     <li
       data-id={id}
@@ -82,19 +99,22 @@ export default function Job({
             })
           : {},
         { border: "1px solid black" },
+        isOverflowingWidth ? { opacity: 0.25 } : {},
       ]}
     >
-      <div
-        css={{
-          overflow: "hidden",
-          // width: width === "Fixed" ? 110 : "auto",
-        }}
-      >
-        <Logo company={data?.job.company} />
-        <p>{data?.job.id}</p>
-        <p>{job?.company.slug}</p>
-        <p>{job?.slug}</p>
-      </div>
+      {!isPadding && (
+        <div
+          css={{
+            overflow: "hidden",
+            // width: width === "Fixed" ? 110 : "auto",
+          }}
+        >
+          <button>(+)</button>
+          <Logo company={data?.job.company} />
+          <p>{data?.job.id}</p>
+          <p>{job?.company.slug + ' ' + job?.slug}</p>
+        </div>
+      )}
     </li>
   );
 }
