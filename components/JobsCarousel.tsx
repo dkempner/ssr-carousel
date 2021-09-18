@@ -89,7 +89,33 @@ export default function JobsCarousel({
             marginLeft: "-28px",
           }}
         >
-          <button onClick={showPrevious} disabled={previousDisabled}>
+          <button
+            onClick={showPrevious.bind(null, {
+              startAnimation: (id: string) => {
+                const el = carouselEl.current;
+                const newFirstItem = el?.querySelector(`[data-id=${id}]`);
+                if (!el || !newFirstItem) return;
+
+                const existingScrollLeft = el.scrollLeft || 0;
+
+                const newScrollLeft =
+                  existingScrollLeft -
+                  el.getBoundingClientRect().x +
+                  newFirstItem.getBoundingClientRect().x;
+
+                el.scroll({
+                  left: newScrollLeft,
+                  behavior: "smooth",
+                });
+              },
+              endAnimation: () => {
+                const el = carouselEl.current;
+                if (!el) return;
+                // el.style.transform = `translateX(0px)`;
+              },
+            })}
+            disabled={previousDisabled}
+          >
             Previous
           </button>
         </div>
@@ -149,7 +175,6 @@ export default function JobsCarousel({
               endAnimation: () => {
                 const el = carouselEl.current;
                 if (!el) return;
-                // el.style.transform = `translateX(0px)`;
               },
             })}
             disabled={nextDisabled}

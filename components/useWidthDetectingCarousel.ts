@@ -26,7 +26,7 @@ export function useWidthDetectingCarousel({
   const visibilityList = useRef(new Map<string, number>());
   const maxSlots = useRef(maxServerRender);
   const currentFirst = useRef(items[0]);
-  const offset = items.findIndex(i => i.id === currentFirst.current.id)
+  const offset = items.findIndex((i) => i.id === currentFirst.current.id);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setTrigger] = useState(Math.random());
 
@@ -62,7 +62,7 @@ export function useWidthDetectingCarousel({
         };
       });
   }, [maxServerRender]);
-  
+
   const allIntersections = Array.from(visibilityList.current.values());
   const maxIntersection = Math.max(...allIntersections);
   const fullyVisibleItems = allIntersections.filter(
@@ -79,14 +79,18 @@ export function useWidthDetectingCarousel({
       items
         // if we're on the client side, prefer the current slots we can see.
         // if we're on the server side, the maximum we're going to render is defined outside.
-        .slice(
-          0,
-          offset + fullyVisibleItems * 2 ||
-            maxServerRender
-        )
+        .slice(0, offset + fullyVisibleItems * 2 || maxServerRender)
         .concat(paddedItems)
     );
-  }, [staticRenderCount, items, maxSlots, offset, fullyVisibleItems, paddedItems, maxServerRender]);
+  }, [
+    staticRenderCount,
+    items,
+    maxSlots,
+    offset,
+    fullyVisibleItems,
+    paddedItems,
+    maxServerRender,
+  ]);
 
   // recompute once on hydrate
   useEffect(() => {
@@ -115,17 +119,29 @@ export function useWidthDetectingCarousel({
     forceUpdate();
   }, [forceUpdate]);
 
+  const showPrevious = useCallback(
+    async ({ startAnimation, endAnimation }) => {
+      const nextOffsetStart = Math.max(
+        items.findIndex((i) => i.id === currentFirst.current.id) -
+          fullyVisibleItems,
+        0
+      );
 
+      const nextOffsetItem = items[nextOffsetStart];
 
-  const showPrevious = useCallback(() => {
-    // const desired = offset - fullyVisibleItems;
-    // setOffset(desired >= 0 ? desired : 0);
-  }, []);
+      setTrigger(Math.random());
+      startAnimation(nextOffsetItem.id);
+      currentFirst.current = nextOffsetItem;
+      endAnimation;
+    },
+    [fullyVisibleItems, items]
+  );
 
   const showNext = useCallback(
     async ({ startAnimation, endAnimation }) => {
       const nextOffsetStart =
-        items.findIndex(i => i.id === currentFirst.current.id) + fullyVisibleItems;
+        items.findIndex((i) => i.id === currentFirst.current.id) +
+        fullyVisibleItems;
       const nextOffsetEnd = nextOffsetStart + visibilityList.current.size;
       const nextBatch = items.slice(nextOffsetStart, nextOffsetEnd);
 
