@@ -6,28 +6,32 @@ import { useWidthDetectingCarousel } from "./useWidthDetectingCarousel";
 import type { JobsQueryJob, WidthVariant } from "./types";
 import { useIsMobile } from "./useIsMobile";
 
-const FixedWidthStyles: CSSObject = {
-  listStyle: "none",
-  overflowX: "hidden",
-  whiteSpace: "nowrap",
-  margin: 0,
-  padding: 0,
-  display: "grid",
-  gridTemplateColumns: `repeat(1000, 157px)`,
-  justifyContent: "space-between",
-  gridAutoFlow: "column",
-  gridGap: 16,
-  height: 250,
+const makeFixedWidthStyles = (count: number): CSSObject => {
+  return {
+    listStyle: "none",
+    whiteSpace: "nowrap",
+    margin: 0,
+    padding: 0,
+    display: "grid",
+    gridTemplateColumns: `repeat(${count + 25}, 157px)`,
+    justifyContent: "space-between",
+    gridAutoFlow: "column",
+    gridGap: 16,
+    height: 250,
+    transition: 'transform 300ms ease-in',
+  };
 };
 
-const MediaQueryStyles: CSSObject = {
-  listStyle: "none",
-  overflowX: "hidden",
-  whiteSpace: "nowrap",
-  margin: 0,
-  padding: 0,
-  display: "block",
-  height: 250,
+const makeMediaQueryStyles = (count: number): CSSObject => {
+  return {
+    listStyle: "none",
+    whiteSpace: "nowrap",
+    margin: 0,
+    padding: 0,
+    display: "block",
+    height: 250,
+    transition: 'transform 300ms ease-in',
+  };
 };
 
 export default function JobsCarousel({
@@ -71,7 +75,7 @@ export default function JobsCarousel({
   });
 
   return (
-    <div>
+    <div css={{}}>
       <p>
         ({number}) Currently Visible: {offset} -{" "}
         {offset + (visibilityList.current.size - 1)}
@@ -103,10 +107,12 @@ export default function JobsCarousel({
                   el.getBoundingClientRect().x +
                   newFirstItem.getBoundingClientRect().x;
 
-                el.scroll({
-                  left: newScrollLeft,
-                  behavior: "smooth",
-                });
+                el.style.transform = `translateX(-${newScrollLeft}px)`;
+
+                // el.scroll({
+                //   left: newScrollLeft,
+                //   behavior: "smooth",
+                // });
               },
               endAnimation: () => {
                 const el = carouselEl.current;
@@ -119,31 +125,39 @@ export default function JobsCarousel({
             Previous
           </button>
         </div>
-
-        <ul
-          ref={carouselEl}
-          css={[
-            width === "Fixed" ? FixedWidthStyles : MediaQueryStyles,
-            {
-              ...(isMobile
-                ? {
-                    overflowX: "scroll",
-                    gridTemplateColumns: "repeat(20, 157px)",
-                  }
-                : {}),
-            },
-          ]}
+        <div
+          css={{
+            overflowX: "hidden",
+            transform: 'translate3d(0, 0, 0)',
+          }}
         >
-          {visibleElements?.map((item) => (
-            <Job
-              key={item.id}
-              id={item.id}
-              job={jobById[item.id]}
-              visibilityList={visibilityList}
-              width={width}
-            />
-          ))}
-        </ul>
+          <ul
+            ref={carouselEl}
+            css={[
+              width === "Fixed"
+                ? makeFixedWidthStyles(ids.length)
+                : makeMediaQueryStyles(ids.length),
+              {
+                ...(isMobile
+                  ? {
+                      overflowX: "scroll",
+                      gridTemplateColumns: "repeat(20, 157px)",
+                    }
+                  : {}),
+              },
+            ]}
+          >
+            {visibleElements?.map((item) => (
+              <Job
+                key={item.id}
+                id={item.id}
+                job={jobById[item.id]}
+                visibilityList={visibilityList}
+                width={width}
+              />
+            ))}
+          </ul>
+        </div>
         <div
           css={{
             position: "absolute",
@@ -167,10 +181,12 @@ export default function JobsCarousel({
                   (newFirstItem.getBoundingClientRect().x -
                     el.getBoundingClientRect().x);
 
-                el.scroll({
-                  left: newScrollLeft,
-                  behavior: "smooth",
-                });
+                el.style.transform = `translateX(-${newScrollLeft}px)`;
+
+                // el.scroll({
+                //   left: newScrollLeft,
+                //   behavior: "smooth",
+                // });
               },
               endAnimation: () => {
                 const el = carouselEl.current;

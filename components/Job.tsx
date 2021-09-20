@@ -84,8 +84,17 @@ export default function Job({
     return intersectionWidth / boundingWidth < 0.5;
   })();
 
-  const isPadding = id.includes("padding-");
+  /**
+   * We want these to be visibility: none so they
+   * continue to be rendered, but can't be reached
+   * with keyboard navigation
+   */
+  const isZeroWidth = (() => {
+    if (!entry) return false;
+    return entry.intersectionRatio === 0;
+  })();
 
+  const isPadding = id.includes("padding-");
 
   return (
     <li
@@ -100,6 +109,7 @@ export default function Job({
           : {},
         { border: "1px solid black" },
         isOverflowingWidth ? { opacity: 0.25 } : {},
+        isZeroWidth ? { visibility: "hidden" } : {},
       ]}
     >
       {!isPadding && (
@@ -112,7 +122,7 @@ export default function Job({
           <button>(+)</button>
           <Logo company={data?.job.company} />
           <p>{data?.job.id}</p>
-          <p>{job?.company.slug + ' ' + job?.slug}</p>
+          <p>{job?.company.slug + " " + job?.slug}</p>
         </div>
       )}
     </li>
